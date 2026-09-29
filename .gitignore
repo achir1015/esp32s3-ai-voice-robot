@@ -1,0 +1,19 @@
+# 個人設定與機密（不上傳）
+AI_Voice_Robot/config.h
+tools/GoogleDrive_Upload.gs
+
+# 原廠韌體備份（屬原廠所有）
+backup/
+
+# 非本專案原創或大型檔案
+*.pdf
+*.exe
+*.mp4
+*.docx
+*.avif
+*.webp
+002.*
+003.*
+004.*
+主要產品.png
+~$*
