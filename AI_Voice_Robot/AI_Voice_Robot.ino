@@ -223,6 +223,16 @@ const size_t MAX_SAMPLES = MIC_SAMPLE_RATE * MAX_RECORD_SEC;
 int16_t preroll[PREROLL_FR][FRAME];
 int prerollHead = 0, prerollCount = 0;
 float noiseFloor = 150;
+float lastRecAvgRms = 0;           // 上一段錄音的平均音量
+bool lastRecHitMax = false;        // 上一段錄音是否一路沒停頓錄到上限（多半是音樂/噪音）
+const float NOISE_FLOOR_MAX = 3000;
+
+// 聽到的是噪音或音樂：把門檻提高到這個音量，避免同樣的聲音一直觸發（安靜後會自動降回）
+void raiseNoiseFloor(float level) {
+  float nf = min(NOISE_FLOOR_MAX, max(noiseFloor, level));
+  if (nf > noiseFloor) Serial.printf("（噪音 %.0f → 門檻提高到 %d）\n", level, (int)(nf * VAD_RATIO));
+  noiseFloor = nf;
+}
 int32_t dcState = 0;
 
 // ------------------------------------------------------------------ 其它 ----
@@ -459,7 +469,7 @@ void buildHelp() {
     {"7. 網頁設定：開啟螢幕左下角的網址，可修改 Wi-Fi、密碼、API Key 與雲端硬碟網址。", C_WHITE},
     {"8. 連不上 Wi-Fi 時會開熱點 XiaoKe-Setup（密碼 xiaoke123），手機連上後開 192.168.4.1 設定。", C_WHITE},
     {"9. 唱歌：說「唱首歌」，從" SONG_COMPOSER "的 YouTube 創作歌單隨機選一首，手機掃 QR 碼就能播放。", C_WHITE},
-    {"10. 按鍵：瀏覽本說明，看完最後一頁就回到聊天。", C_WHITE},
+    {"10. 按鍵：短按看本說明（看完最後一頁回到聊天）；環境吵雜時「按住說話，放開送出」。", C_WHITE},
     {"\f", 0},
     {"二、創意開發者", C_YELLOW},
     {"", C_WHITE},
@@ -820,19 +830,24 @@ size_t recordUtterance(bool byButton) {
   lastInteraction = millis();
   int thr = vadThreshold();
   int silentMs = 0, voicedMs = 0;
+  double rmsSum = 0; int frames = 0;
+  lastRecHitMax = true;
   while (n + FRAME <= MAX_SAMPLES) {
     int rms = readFrame(pcm + n);
     n += FRAME;
     micLevel = rms;
+    rmsSum += rms; frames++;
     if (byButton) {
       if (!buttonPressed()) break;
       voicedMs += 20;
     } else {
       if (rms > thr * 0.7f) { silentMs = 0; voicedMs += 20; }
       else silentMs += 20;
-      if (silentMs >= VAD_SILENCE_MS) break;
+      if (silentMs >= VAD_SILENCE_MS) { lastRecHitMax = false; break; }
     }
   }
+  if (byButton) lastRecHitMax = false;
+  lastRecAvgRms = frames ? rmsSum / frames : 0;
   micLevel = 0;
   if (!byButton) {
     // 去掉尾端靜音（保留 200ms）
@@ -1006,7 +1021,6 @@ String captureImageDataUri() {
 
   // 640x480 JPEG 縮一半解碼成 320x240，剛好整個螢幕
   if (photoPix && jpg2rgb565(fb->buf, fb->len, (uint8_t *)photoPix, JPG_SCALE_2X)) {
-    for (int i = 0; i < SCREEN_W * SCREEN_H; i++) photoPix[i] = (photoPix[i] >> 8) | (photoPix[i] << 8);
     photoAt = millis();
     photoShow = true;
   }
@@ -1310,7 +1324,6 @@ bool fetchThumb(const String &id) {
       else delay(5);
     }
     if (jpg && len > 0 && jpg2rgb565(jpg, len, (uint8_t *)thumbPix, JPG_SCALE_NONE)) {
-      for (int i = 0; i < 320 * 180; i++) thumbPix[i] = (thumbPix[i] >> 8) | (thumbPix[i] << 8);
       ok = true;
     }
     free(jpg);
@@ -1402,6 +1415,7 @@ void handleUtterance(size_t samples) {
   String userText = speechToText(samples);
   if (userText.isEmpty() || isNoiseTranscript(userText)) {
     if (lastApiError.length()) showError(lastApiError);
+    else raiseNoiseFloor(lastRecAvgRms * 0.7f);
     Serial.println("（忽略：" + userText + "）");
     return;
   }
@@ -1794,7 +1808,24 @@ void loop() {
     bool btn = buttonPressed();
     if (btn && !btnPrev) {
       delay(30);
-      if (buttonPressed()) { if (uiState == UI_SONG) exitSong(); else onHelpButton(); }
+      if (buttonPressed()) {
+        if (uiState == UI_SONG) exitSong();
+        else if (uiState == UI_HELP) onHelpButton();
+        else {
+          uint32_t t0 = millis();                          // 短按 = 功能說明；按住 = 說話（環境吵時用）
+          while (buttonPressed() && millis() - t0 < 400) delay(10);
+          if (buttonPressed()) {
+            Serial.println("（按住說話）");
+            size_t n = recordUtterance(true);
+            if (n) handleUtterance(n);
+            flushMic(300);
+            if (uiState != UI_SONG) setUi(UI_IDLE);
+            btnPrev = false;
+            return;
+          }
+          onHelpButton();
+        }
+      }
     }
     btnPrev = buttonPressed();
     if (uiState == UI_SONG) {                               // 唱歌畫面：暫停聲控（手機正在放歌），時間到回到聊天
@@ -1834,6 +1865,11 @@ void loop() {
   if (trigger) {
     loudFrames = 0;
     size_t n = recordUtterance(byButton);
+    if (n && lastRecHitMax) {
+      Serial.println("（一直沒有停頓，可能是音樂或噪音，不送出）");
+      raiseNoiseFloor(lastRecAvgRms * 0.9f);
+      n = 0;
+    }
     if (n) handleUtterance(n);
     else Serial.println("（太短，視為雜音）");
     flushMic(300);
