@@ -4,6 +4,7 @@
 使用 Arduino IDE 開發，AI 服務採用 OpenAI（語音轉文字、GPT 對話、看圖、語音合成）。
 <img width="807" height="495" alt="image" src="https://github.com/user-attachments/assets/ce08b40c-c6fb-45e6-956d-ed8253e8b30b" />
 <img width="842" height="480" alt="image" src="https://github.com/user-attachments/assets/69f7a56b-9922-4ea7-91a4-96f2304c8f2c" />
+<img width="519" height="361" alt="image" src="https://github.com/user-attachments/assets/5909904d-5d4c-458a-a744-a1f48750f1ff" />
 
 > 創意開發者：**吳玉柱先生**與 Claude AI 共同開發
 > 意見聯絡：achir1015@gmail.com
