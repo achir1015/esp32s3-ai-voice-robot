@@ -59,6 +59,11 @@ button:disabled{opacity:.6}
   <input id="gdrive" placeholder="https://script.google.com/macros/s/…/exec">
   <div class="hint">部署 GoogleDrive_Upload.gs 後取得；留空＝拍照不上傳</div>
 
+  <label for="playlist">YouTube 創作歌單（說「唱首歌」隨機選歌）</label>
+  <div class="row"><input id="playlist" placeholder="https://www.youtube.com/playlist?list=…">
+    <button type="button" id="refreshBtn">更新歌單</button></div>
+  <div class="hint">目前歌單：<span id="songCount">—</span> 首</div>
+
   <div style="margin-top:18px"><button class="primary" id="saveBtn" type="submit">儲存並重新啟動</button></div>
   <div id="msg"></div>
 </form>
@@ -76,6 +81,7 @@ async function loadStatus(){
     $('status').innerHTML=rows.map(r=>`<span>${r[0]}</span><span>${r[1]}</span>`).join('');
     $('keyNow').textContent=cur.apiKey||'（未設定）';
     $('gdrive').value=cur.gdrive||'';
+    $('playlist').value=cur.playlist||'';$('songCount').textContent=cur.songs;
     $('passHint').textContent=cur.hasPass?'已儲存密碼；只在要更換時填寫':'';
   }catch(e){$('status').innerHTML='<span>狀態</span><span class="err">無法讀取</span>'}
 }
@@ -106,12 +112,18 @@ $('f').onsubmit=async e=>{
   if(key&&!key.startsWith('sk-')){msg.className='err';msg.textContent='API Key 應該以 sk- 開頭';return}
   $('saveBtn').disabled=true;msg.className='';msg.textContent='儲存中…';
   try{
-    const body=new URLSearchParams({ssid,pass:$('pass').value,apikey:key,gdrive:$('gdrive').value.trim()});
+    const body=new URLSearchParams({ssid,pass:$('pass').value,apikey:key,gdrive:$('gdrive').value.trim(),playlist:$('playlist').value.trim()});
     const r=await fetch('/save',{method:'POST',body});
     const t=await r.text();
     if(!r.ok)throw new Error(t);
     msg.className='ok';msg.textContent='✓ 已儲存！機器人重新啟動中，約 20 秒後可重新整理本頁（IP 可能改變，請看機器人螢幕）';
   }catch(err){msg.className='err';msg.textContent='儲存失敗：'+err.message;$('saveBtn').disabled=false}
+};
+$('refreshBtn').onclick=async()=>{
+  const b=$('refreshBtn');b.disabled=true;b.textContent='更新中…';
+  try{const r=await fetch('/refresh',{method:'POST'});const t=await r.text();
+    $('songCount').textContent=r.ok?t:'失敗';}catch(e){$('songCount').textContent='失敗'}
+  b.disabled=false;b.textContent='更新歌單';
 };
 loadStatus().then(scan);
 </script></main></body></html>)HTML";

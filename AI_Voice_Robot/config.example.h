@@ -32,6 +32,12 @@
 #define GDRIVE_TOKEN      "CHANGE_ME_TOKEN"   // 必須和 .gs 裡的 TOKEN 相同
 #define PHOTO_SHOW_MS     3000     // 拍照後全螢幕顯示照片的時間
 
+// ------------------------------------------------------------ 唱歌（YouTube 歌單）----
+// 說「唱首歌」會從這個播放清單隨機選一首，顯示封面、歌名與 QR 碼（手機掃描在 YouTube 播放）
+#define YT_PLAYLIST_URL   "https://www.youtube.com/playlist?list=PLMiXt5EIkXI0"
+#define SONG_COMPOSER     "吳玉柱"   // 詞曲創作者（版權所有）
+#define SONG_SHOW_SEC     180        // 唱歌畫面停留秒數（按鍵可提早回到聊天）
+
 // ------------------------------------------------------------ 聲控（免按鍵）----
 #define VOICE_ACTIVATION  1        // 1 = 直接說話就會開始聆聽；0 = 只用按鍵
 #define VAD_MIN_RMS       250      // 觸發錄音的最低音量（環境吵、常誤觸就調高；喊很大聲才有反應就調低）
