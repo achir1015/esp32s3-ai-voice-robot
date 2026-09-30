@@ -22,9 +22,6 @@
 | 數位聽覺 | INMP441 I2S 全向性數位麥克風 | 1 |
 | 震撼音效 | MAX98357A I2S Class-D 數位放大器 | 1 |
 | 發聲單體 | 高品質音樂專用腔體喇叭（含音箱，聲音飽滿）| 1 |
-
-操作影片示範：https://youtu.be/Yc34DjKDAEE?si=BEEVMGPZwkc8GQqt
-
 > 本專案實際使用的板子為 ESP32-S3 N16R8（16MB Flash + 8MB PSRAM），鏡頭為 **OV3660**，程式兩種鏡頭都支援。
 
 ---
