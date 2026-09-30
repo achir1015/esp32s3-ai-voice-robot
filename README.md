@@ -78,9 +78,7 @@ PinFinder ~ PinFinder7/    腳位偵測工具
 5. 手機連 Wi-Fi `XiaoKe-Setup`（密碼 `xiaoke123`）→ 開啟 `http://192.168.4.1` → 選 Wi-Fi、輸入密碼與 OpenAI API Key → 儲存
 
 詳細步驟、Google 雲端硬碟設定、參數調整請看 [AI_Voice_Robot/README.md](AI_Voice_Robot/README.md)。
-
 ## 授權與致謝
-
 - 繁中字型資料來自 [GNU Unifont](https://unifoundry.com/unifont/)（GPL-2.0-or-later with font embedding exception / SIL OFL 1.1）
 - 農曆資料由 Python [lunardate](https://pypi.org/project/lunardate/) 產生
 - 此系統是**吳玉柱先生**與 **Claude AI** 共同開發，有任何意見請聯絡 achir1015@gmail.com
